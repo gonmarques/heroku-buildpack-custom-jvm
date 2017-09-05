@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+export BUILDPACK_STDLIB_URL="https://lang-common.s3.amazonaws.com/buildpack-stdlib/v7/stdlib.sh"
+source <(curl -s --retry 3 -L $BUILDPACK_STDLIB_URL)
+
+BUILD_DIR=$1
+ENV_DIR=$3
+
+export_env $ENV_DIR "." "JAVA_OPTS|JAVA_TOOL_OPTIONS"
+
+JVM_COMMON_BUILDPACK=${JVM_COMMON_BUILDPACK:-https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/jvm-common.tgz}
+mkdir -p /tmp/jvm-common
+curl --silent --location $JVM_COMMON_BUILDPACK | tar xzm -C /tmp/jvm-common --strip-components=1
+. /tmp/jvm-common/bin/util
+. /tmp/jvm-common/bin/java
+
+javaVersion=$(detect_java_version ${BUILD_DIR})
+install_java_with_overlay ${BUILD_DIR} ${javaVersion}
+
